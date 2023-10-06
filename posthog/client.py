@@ -27,7 +27,7 @@ MAX_DICT_SIZE = 50_000
 class Client(object):
     """Create a new PostHog client."""
 
-    log = logging.getLogger("posthog")
+    log = logging.getLogger("airbyte.posthog")
 
     def __init__(
         self,
@@ -107,6 +107,7 @@ class Client(object):
                     gzip=gzip,
                     retries=max_retries,
                     timeout=timeout,
+                    debug=debug,
                 )
                 self.consumers.append(consumer)
 
@@ -389,6 +390,12 @@ class Client(object):
         queue.join()
         # Note that this message may not be precise, because of threading.
         self.log.debug("successfully flushed about %s items.", size)
+
+    def force_flush(self):
+        if self.consumers:
+            for consumer in self.consumers:
+                consumer.force_flush()
+            self.flush()
 
     def join(self):
         """Ends the consumer thread once the queue is empty.
