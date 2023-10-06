@@ -8,6 +8,7 @@ except ImportError:
 
 # Don't import analytics-python module here, since deps may not be installed
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "posthog"))
+# Update version at posthog/version.py. Version number must follow https://peps.python.org/pep-0440/
 from version import VERSION
 
 long_description = """
