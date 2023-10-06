@@ -82,7 +82,7 @@ class Client(object):
             logging.basicConfig()
             self.log.setLevel(logging.DEBUG)
         else:
-            self.log.setLevel(logging.WARNING)
+            self.log.setLevel(logging.INFO)
 
         if sync_mode:
             self.consumers = None
