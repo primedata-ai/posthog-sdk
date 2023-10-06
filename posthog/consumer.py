@@ -60,11 +60,11 @@ class Consumer(Thread):
         self.timeout = timeout
         if debug:
             # Ensures that debug level messages are logged when debug mode is on.
-            # Otherwise, defaults to WARNING level. See https://docs.python.org/3/howto/logging.html#what-happens-if-no-configuration-is-provided
+            # Otherwise, defaults to INFO level. See https://docs.python.org/3/howto/logging.html#what-happens-if-no-configuration-is-provided
             logging.basicConfig()
             self.log.setLevel(logging.DEBUG)
         else:
-            self.log.setLevel(logging.WARNING)
+            self.log.setLevel(logging.INFO)
 
     def run(self):
         """Runs the consumer."""
