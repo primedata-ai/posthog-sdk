@@ -128,7 +128,7 @@ class Consumer(Thread):
                 items.append(item)
                 total_size += item_size
                 if total_size >= BATCH_SIZE_LIMIT:
-                    self.log.debug("hit batch size limit (size: %d)", total_size)
+                    self.log.info("hit batch size limit (size: %d)", total_size)
                     break
             except Empty:
                 break
