@@ -18,11 +18,14 @@ MAX_MSG_SIZE = 32 << 10
 # lower to leave space for extra data that will be added later, eg. "sentAt".
 BATCH_SIZE_LIMIT = 475000
 
+# a special message to indicate that client want to force flushing all messages in the queue
+FORCE_FLUSH_MESSAGE = '__force_flush__'
+
 
 class Consumer(Thread):
     """Consumes the messages from the client's queue."""
 
-    log = logging.getLogger("posthog")
+    log = logging.getLogger("airbyte.posthog")
 
     def __init__(
         self,
@@ -35,6 +38,7 @@ class Consumer(Thread):
         gzip=False,
         retries=10,
         timeout=15,
+        debug=False,
     ):
         """Create a consumer thread."""
         Thread.__init__(self)
@@ -54,6 +58,13 @@ class Consumer(Thread):
         self.running = True
         self.retries = retries
         self.timeout = timeout
+        if debug:
+            # Ensures that debug level messages are logged when debug mode is on.
+            # Otherwise, defaults to WARNING level. See https://docs.python.org/3/howto/logging.html#what-happens-if-no-configuration-is-provided
+            logging.basicConfig()
+            self.log.setLevel(logging.DEBUG)
+        else:
+            self.log.setLevel(logging.WARNING)
 
     def run(self):
         """Runs the consumer."""
@@ -66,6 +77,9 @@ class Consumer(Thread):
     def pause(self):
         """Pause the consumer."""
         self.running = False
+        
+    def force_flush(self):
+        self.queue.put(FORCE_FLUSH_MESSAGE, block=False)
 
     def upload(self):
         """Upload the next batch of items, return whether successful."""
@@ -76,6 +90,7 @@ class Consumer(Thread):
 
         try:
             self.request(batch)
+            self.log.info('Flushed {} records'.format(len(batch)))
             success = True
         except Exception as e:
             self.log.error("error uploading: %s", e)
@@ -102,6 +117,10 @@ class Consumer(Thread):
                 break
             try:
                 item = queue.get(block=True, timeout=self.flush_interval - elapsed)
+                if isinstance(item, str) and item == FORCE_FLUSH_MESSAGE:
+                    self.log.debug('Force flush, current queue size {}'.format(len(items)))
+                    self.queue.task_done()
+                    break
                 item_size = len(json.dumps(item, cls=DatetimeSerializer).encode())
                 if item_size > MAX_MSG_SIZE:
                     self.log.error("Item exceeds 32kb limit, dropping. (%s)", str(item))
